@@ -1,0 +1,285 @@
+{
+    "sections": [
+        {
+            "id": "sec_1",
+            "name": "Isian Data OSS",
+            "items": [
+                {
+                    "id": "item_2_1",
+                    "label": "KPPR dapat diakses",
+                    "autotext": "- Upload kembali dok KPPR"
+                },
+                {
+                    "id": "item_2_2",
+                    "label": "Jenis Investasi PMA atau PMDN lintas provinsi",
+                    "autotext": "- Berdasakan Permeninvestasi no 5 tahun 2025, jenis pengajuan PMDN selain berlokasi lintas provinsi merupakan kewenangan Pemerintah Daerah."
+                },
+                {
+                    "id": "item_2_3",
+                    "label": "Kesesuaian jenis produk dengan KBLI",
+                    "autotext": "- Berdasarkan Peraturan Kepala BPS  No. 2 tahun 2022, KBLI yang dipilih belum sesuai dengan kegiatan usaha atau produk yang diajukan."
+                },
+                {
+                    "id": "item_2_4",
+                    "label": "Jenis produksi",
+                    "autotext": "- isi jenis produksi dengan data jenis produk yang diajukan (contoh: biskuit)."
+                },
+                {
+                    "id": "item_2_5",
+                    "label": "Jenis dgn produk yang akan dihasilkan",
+                    "autotext": "- Perusahaan perlu menyesuaikan jenis KBLI dengan produk yang akan dihasilkan."
+                }
+            ]
+        },
+        {
+            "id": "sec_2",
+            "name": "Isian Data SIINas",
+            "items": [
+                {
+                    "id": "item_3_6",
+                    "label": "Detail produk terisi",
+                    "autotext": "- Isi detail produk yang spesifik."
+                },
+                {
+                    "id": "item_3_7",
+                    "label": "TKA terisi",
+                    "autotext": "- Isi jumlah tenaga kerja asing"
+                },
+                {
+                    "id": "item_3_8",
+                    "label": "Kesesuaian list mesin dengan lampiran",
+                    "autotext": "- Lengkapi dan sesuaikan daftar mesin serta sesuaikan dengan lampiran 2."
+                },
+                {
+                    "id": "item_3_9",
+                    "label": "Kesesuaian list bahan baku dengan lampiran",
+                    "autotext": "- Lengkapi dan sesuaikan daftar bahan baku serta sesuaikan dengan lampiran 1."
+                },
+                {
+                    "id": "item_3_10",
+                    "label": "kebutuhan energi dan air baku terisi",
+                    "autotext": "- Lengkapi dan sesuaikan isian kebutuhan listrik, gas dan air baku serta sesuaikan dengan lampiran 1"
+                }
+            ]
+        },
+        {
+            "id": "sec_3",
+            "name": "Lampiran 1 (bahan baku, energi, modal kerja)",
+            "items": [
+                {
+                    "id": "item_4_11",
+                    "label": "daftar bahan baku & bahan penolong: jenis, volume, spesifikasi singkat, nilai, asal",
+                    "autotext": "- Sebutkan jenis, volume, spesifikasi singkat, asal dan nilai atas masing-masing bahan baku dan bahan penolong dalam 1 periode kerja atau selama-lamanya 6 bulan. Buatkan dalam tabel yang ringkas dan mudah dibaca"
+                },
+                {
+                    "id": "item_4_12",
+                    "label": "kebutuhan listrik, gas, dan air",
+                    "autotext": "- Sebutkan volume, asal dan nilai kebutuhan listrik, gas dan air dalam 1 periode kerja atau selama-lamanya 6 bulan"
+                },
+                {
+                    "id": "item_4_13",
+                    "label": "rekap nilai invesatasi bahan baku & energi",
+                    "autotext": "- Tambahkan rekap masing-masing  nilai investasi bahan baku dan energi"
+                },
+                {
+                    "id": "item_4_14",
+                    "label": "Perhitungan kapasitas produksi",
+                    "autotext": "- Jabarkan perhitungan kapasitas produksi dan sandingkan dengan data yang diinput pada OSS yaitu \"isian kapasitas produksi dan satuan yang telah diisi di biodata\""
+                },
+                {
+                    "id": "item_4_15",
+                    "label": "kesesuaian investasi modal kerja OSS",
+                    "autotext": "- Sebutkan nilai investasi modal kerja lainnya\n- Rekap nilai investasi bahan baku, energi, dan modal kerja lainnya dan sandingkan dengan nilai investasi modal kerja yang diinput dalam OSS yaitu \"isian modal kerja\""
+                }
+            ]
+        },
+        {
+            "id": "sec_4",
+            "name": "Lampiran 2 (mesin peralatan, alat lab)",
+            "items": [
+                {
+                    "id": "item_5_16",
+                    "label": "daftar mesin, spesifikasi singkat, asal mesin, kepemilikan, nilai investasi mesin",
+                    "autotext": "- Sebutkan daftar mesin, spesifikasi singkat, asal mesin, kepemilikan, nilai investasi mesin"
+                },
+                {
+                    "id": "item_5_17",
+                    "label": "Invois/bukti pembelian atau sewa mesin",
+                    "autotext": "- Lengkapi Invois/bukti pembelian atau sewa mesin"
+                },
+                {
+                    "id": "item_5_18",
+                    "label": "daftar alat uji lab, utilitas, mesin pendukung lainnya",
+                    "autotext": "- Sebutkan juga data alat uji lab, utilitas, mesin pendukung lainnya"
+                },
+                {
+                    "id": "item_5_19",
+                    "label": "rekap nilai invesatasi mesin dalam negri dan mesin impor",
+                    "autotext": "- Tambahkan rekap masing-masing nilai invesatasi mesin dalam negri dan mesin impor"
+                },
+                {
+                    "id": "item_5_20",
+                    "label": "kesesuaian investasi mesin OSS",
+                    "autotext": "- Investasi mesin dalam negeri dan mesin impor yang diinput dalam OSS yaitu \"isian Mesin Dalam Negeri\" dan \"isian Mesin Impor\", belum sesuai dengan total nilai mesin disebutkan dalam lampiran ini"
+                }
+            ]
+        },
+        {
+            "id": "sec_5",
+            "name": "Lampiran 3 (foto dan video)",
+            "items": [
+                {
+                    "id": "item_6_21",
+                    "label": "foto mesin & name plate",
+                    "autotext": "- Buatkan daftar foto mesin/peralatan,gunakan foto asli, dan urutkan foto sesuai dengan penomoran mesin pada lampiran 2."
+                },
+                {
+                    "id": "item_6_22",
+                    "label": "video alur produksi",
+                    "autotext": "- Upload video yang menunjukan mesin/peralatan sebagaimana disebutkan dalam lampiran 2 telah terpasang dan penjelasan alur produksi. Video diupluad pada cloud (gdrive, one drive, dll), kemuduan share linknya disebutkan dalam lampiran ini"
+                }
+            ]
+        },
+        {
+            "id": "sec_6",
+            "name": "Lampiran 4 (kepemilikan/sewa bangunan)",
+            "items": [
+                {
+                    "id": "item_7_23",
+                    "label": "Belum ada dokumen kepemilikan/ sewa tanah dan bangunan",
+                    "autotext": "- Lengkapi Dokumen kepemilikan/ sewa tanah dan bangunan"
+                },
+                {
+                    "id": "item_7_24",
+                    "label": "Dokumen terlalu banyak dan sulit dicek",
+                    "autotext": "- Unggah hanya dokumen yang berkaitan dengan bukti kepemilikan atau sewa tanah bangunan\n- lingkari atau beri tanda pada durasi sewa jika tanah dan bangunan merupakan sewa"
+                },
+                {
+                    "id": "item_7_25",
+                    "label": "Durasi sewa tersisa kurang dari 6 bulan",
+                    "autotext": "- Durasi sewa tanah/bangunan tersisa kurang dari 6 bulan, berikan penjelasan tindakan apa yang akan perusahaan lakukan"
+                }
+            ]
+        },
+        {
+            "id": "sec_7",
+            "name": "Lampiran 5 (alur pengadaan, penerimaan, penyimpanan)",
+            "items": [
+                {
+                    "id": "item_8_26",
+                    "label": "flowchart alur pengadaan, penerimaan, penyimpanan tidak proper",
+                    "autotext": "- Perbaiki dan lengkapi bagan alur, pahami kaidah dalam pembuatan flowchart, seperti cara penggunaan bentuk (process, decission, dll), close loop, dll"
+                },
+                {
+                    "id": "item_8_27",
+                    "label": "belum tergambar jelas proses pengadaan, penerimaan, penyimpanan",
+                    "autotext": "- Lengkapi bagan alur mulai dari proses pengajuan BB, pengadaan, incoming check, hingga peletakan BB"
+                },
+                {
+                    "id": "item_8_28",
+                    "label": "Kop dan approval",
+                    "autotext": "- Lengkapi dokumen flow chart alur pengadaan, penerimaan, penyimpanan dengan kop surat dan approval pimpinan perusahaan"
+                }
+            ]
+        },
+        {
+            "id": "sec_8",
+            "name": "Lampiran 6 (alur produksi)",
+            "items": [
+                {
+                    "id": "item_9_29",
+                    "label": "flowchart alur produksi tidak proper",
+                    "autotext": "- Perbaiki dan lengkapi bagan alur, pahami kaidah dalam pembuatan flowchart, seperti cara penggunaan bentuk (process, decission, dll), close loop, dll"
+                },
+                {
+                    "id": "item_9_30",
+                    "label": "belum tergambar jelas proses penyiapan bahan baku, proses produksi, inspeksi, hingga proses penyimpanan",
+                    "autotext": "- Lengkapi bagan alur mulai dari proses penyiapan BB, proses produksi, inspeksi, pengemasan, hingga penyimpanan FG"
+                },
+                {
+                    "id": "item_9_31",
+                    "label": "Kop dan approval",
+                    "autotext": "- Lengkapi dokumen flow chart alur produksi dengan kop surat dan approval pimpinan perusahaan"
+                }
+            ]
+        },
+        {
+            "id": "sec_9",
+            "name": "Lampiran 7 (alur proses QC)",
+            "items": [
+                {
+                    "id": "item_10_32",
+                    "label": "flowchart alur proses QC tidak proper",
+                    "autotext": "- Perbaiki dan lengkapi bagan alur, pahami kaidah dalam pembuatan flowchart, seperti cara penggunaan bentuk (process, decission, dll), close loop, dll"
+                },
+                {
+                    "id": "item_10_33",
+                    "label": "belum tergambar jelas proses QC incoming, inline, final product",
+                    "autotext": "- Lengkapi bagan alur masing-masing proses QC, proses QC incoming, inline, dan final product.\n- Sebutkan mesin dan/atau peralatan yang digunakan dalam setiap proses QC"
+                },
+                {
+                    "id": "item_10_34",
+                    "label": "Terlampir QC checksheet",
+                    "autotext": "- Tambahkan checksheet untuk setiap proses QC"
+                },
+                {
+                    "id": "item_10_35",
+                    "label": "Kop dan approval",
+                    "autotext": "- Lengkapi dokumen flow chart alur proses QC dengan kop surat dan approval pimpinan perusahaan"
+                }
+            ]
+        },
+        {
+            "id": "sec_10",
+            "name": "Lampiran 8 (pengemasan, penyimpanan, pengangkutan dan distribusi)",
+            "items": [
+                {
+                    "id": "item_11_36",
+                    "label": "flowchart pengemasan, penyimpanan, pengangkutan dan distribusi tidak proper",
+                    "autotext": "- Perbaiki dan lengkapi bagan alur, pahami kaidah dalam pembuatan flowchart , seperti cara penggunaan bentuk (process, decission, dll), close loop, dll"
+                },
+                {
+                    "id": "item_11_37",
+                    "label": "belum tergambar jelas proses pengemasan, penyimpanan, pengangkutan dan distribusi",
+                    "autotext": "- Lengkapi bagan alur mulai dari proses pengemasan, penyimpanan, pengangkutan dan distribusi"
+                },
+                {
+                    "id": "item_11_38",
+                    "label": "Pengaturan penyimpanan dan pengambilan berdasarkan FIFO/FEFO",
+                    "autotext": "- Jelaskan cara pengaturan penyimpanan dan pengambilan dengan memperhatikan asas FIFO/FEFO"
+                },
+                {
+                    "id": "item_11_39",
+                    "label": "Kop dan approval",
+                    "autotext": "- Lengkapi flowchart pengemasan, penyimpanan, pengangkutan dan distribusi dengan kop surat dan approval pimpinan perusahaan"
+                }
+            ]
+        },
+        {
+            "id": "sec_11",
+            "name": "Lampiran 9 (tata letak, pengolahan limbah dan lain-lain)",
+            "items": [
+                {
+                    "id": "item_12_40",
+                    "label": "Layout dan alur pergerakan material",
+                    "autotext": "- Lengkapi dengan Layout pabrik dan berikan tanda alur proses dari bahan baku masuk hingga produk jadi keluar pabrik\n- Beri tanda fasilitas pengolahan limbah"
+                },
+                {
+                    "id": "item_12_41",
+                    "label": "jenis limbah & penangannya",
+                    "autotext": "- Sebutkan jenis limbah yang dihasilkan dan cara penanganannya"
+                },
+                {
+                    "id": "item_12_42",
+                    "label": "Struktur organisasi",
+                    "autotext": "- Tambahkan dokumen struktur organisasi perusahaan"
+                },
+                {
+                    "id": "item_12_43",
+                    "label": "Nilai investasi lainnya",
+                    "autotext": "- sebutkan apa saja investasi lainnya yang telah dilakukan, sebagaimana perusahaan sebutkan di OSS senilai \"isian Investasi Lainnya\""
+                }
+            ]
+        }
+    ]
+}
