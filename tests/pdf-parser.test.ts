@@ -122,6 +122,8 @@ Sludge removed 0
 Indi 4.0
 `;
 
+const commaSolidWasteText = reportText.replace("1. Spent bleaching earth 12", "Limbah padat organik 0,9 ton");
+
 describe("PDF report parser", () => {
   it("parses the report until liquid waste and ignores sections below it", () => {
     const report = parseReportFromText(reportText, "agro.pdf");
@@ -143,7 +145,8 @@ describe("PDF report parser", () => {
     expect(limits["10437"]?.upper).toBe(17939);
     expect(limits["10423"]?.upper).toBe(35150);
     expect(result.findings.some((finding) => finding.ruleId === "PRICE_OUTSIDE_KBLI_LIMIT")).toBe(true);
-    expect(result.findings.some((finding) => finding.ruleId === "LIQUID_WASTE_DEBIT_TOO_HIGH")).toBe(true);
+    expect(result.findings.find((finding) => finding.ruleId === "LIQUID_WASTE_DEBIT_TOO_HIGH")?.severity).toBe("MEDIUM");
+    expect(result.findings.some((finding) => finding.ruleId === "INLET_ZERO_OUTLET_POSITIVE")).toBe(false);
     expect(result.findings.some((finding) => finding.ruleId === "OWNERSHIP_NOT_100")).toBe(false);
   });
 
@@ -164,5 +167,14 @@ describe("PDF report parser", () => {
     expect(report.sectionsText.inventory).not.toContain("RBD Olein 10437");
     expect(report.sectionsText.capacity).toContain("RBD Olein 10437");
     expect(report.parserWarnings).not.toContain("Bagian Kapasitas Produksi tidak ditemukan pada teks PDF.");
+  });
+
+  it("parses decimal ton solid waste and does not mark solid waste as missing", () => {
+    const report = parseReportFromText(commaSolidWasteText, "solid-waste.pdf");
+    const result = validateReport(report, DEFAULT_PRICE_LIMITS);
+
+    expect(report.solidWasteRows).toHaveLength(1);
+    expect(report.solidWasteRows[0].Jumlah).toBe("0,9 ton");
+    expect(result.findings.some((finding) => finding.ruleId === "NO_SOLID_WASTE_WITH_PRODUCTION")).toBe(false);
   });
 });

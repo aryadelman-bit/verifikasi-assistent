@@ -70,6 +70,27 @@ function totalProductionKg(report: ParsedReport): number {
   return sum(report.production.map((row) => row.productionKg));
 }
 
+function rowQuantityKg(row: Record<string, string>, defaultUnit: "kg" | "ton" = "kg"): number {
+  const raw = `${row.Jumlah ?? ""} ${row.Nilai ?? ""}`.trim();
+  const value = parseIndonesianNumber(raw) ?? 0;
+  const unit = raw.toLowerCase();
+  if (unit.includes("ton")) return value * 1000;
+  if (unit.includes("kg") || unit.includes("kilogram")) return value;
+  return defaultUnit === "ton" ? value * 1000 : value;
+}
+
+function inventoryValue(report: ParsedReport, pattern: RegExp, side: "startValue" | "endValue"): number {
+  return sum(report.inventory.filter((row) => pattern.test(row.type)).map((row) => row[side]));
+}
+
+function productionValue(report: ParsedReport): number {
+  return sum(report.production.map((row) => row.productionValue));
+}
+
+function salesValue(report: ParsedReport): number {
+  return sum(report.production.map((row) => row.salesValue));
+}
+
 function ownershipPercentage(text: string, label: string): number | null {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const match = text.match(new RegExp(`^\\s*${escaped}\\s+(\\d+(?:[.,]\\d+)?)\\s*%\\s*$`, "im"));
@@ -105,6 +126,8 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
     }
   }
 
+  const productionKg = totalProductionKg(report);
+
   if (report.capacity.length === 0) {
     findings.push(
       finding(
@@ -134,6 +157,48 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
           "Kapasitas produksi standar dibandingkan dengan kapasitas terpasang standar.",
           "Cek kembali satuan, periode kapasitas, dan konversi kilogram.",
           `Mohon konfirmasi kapasitas ${row.product}; kapasitas produksi terlihat melebihi kapasitas terpasang.`
+        )
+      );
+    }
+  }
+
+  const capacityByKbli = new Map<string, number>();
+  const productionByKbli = new Map<string, number>();
+  for (const row of report.capacity) {
+    capacityByKbli.set(row.kbli, (capacityByKbli.get(row.kbli) ?? 0) + row.installedKg);
+  }
+  for (const row of report.production) {
+    productionByKbli.set(row.kbli, (productionByKbli.get(row.kbli) ?? 0) + row.productionKg);
+  }
+  for (const [kbli, producedKg] of productionByKbli) {
+    const installedKg = capacityByKbli.get(kbli) ?? 0;
+    if (producedKg > 0 && installedKg === 0 && report.capacity.length > 0) {
+      findings.push(
+        finding(
+          "capacity",
+          "PRODUCTION_WITHOUT_MATCHING_CAPACITY",
+          "Relasi produksi-kapasitas per KBLI",
+          "MEDIUM",
+          `Produksi KBLI ${kbli} ada, tetapi kapasitas untuk KBLI tersebut tidak terbaca.`,
+          `produksi ${formatNumber(producedKg)} kg; kapasitas KBLI ${kbli} 0 kg`,
+          "Produksi dikelompokkan per KBLI dan dibandingkan dengan kapasitas terpasang per KBLI.",
+          "Cek apakah produk/KBLI kapasitas sama dengan produk/KBLI produksi.",
+          `Mohon konfirmasi kapasitas produksi untuk KBLI ${kbli}.`
+        )
+      );
+    }
+    if (installedKg > 0 && producedKg > installedKg * 1.05) {
+      findings.push(
+        finding(
+          "capacity",
+          "PRODUCTION_OVER_INSTALLED_CAPACITY_BY_KBLI",
+          "Relasi produksi-kapasitas per KBLI",
+          "HIGH",
+          `Produksi KBLI ${kbli} melebihi kapasitas terpasang yang terbaca.`,
+          `produksi ${formatNumber(producedKg)} kg; kapasitas ${formatNumber(installedKg)} kg`,
+          "Total produksi kg per KBLI dibandingkan dengan total kapasitas terpasang kg per KBLI.",
+          "Cek satuan, periode kapasitas, dan apakah kapasitas yang dilaporkan bersifat tahunan/triwulanan.",
+          `Mohon klarifikasi kapasitas dan produksi KBLI ${kbli}; produksi terlihat melebihi kapasitas terpasang.`
         )
       );
     }
@@ -188,9 +253,9 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
     }
   }
 
-  if (totalProductionKg(report) > 0 && report.materials.length === 0) {
+  if (productionKg > 0 && report.materials.length === 0) {
     findings.push(
-      finding("materials", "MATERIAL_EMPTY_WITH_PRODUCTION", "Kelengkapan bahan baku", "HIGH", "Produksi ada tetapi bahan baku tidak terbaca.", `${formatNumber(totalProductionKg(report))} kg`, "Total produksi > 0, tabel bahan baku kosong.", "Minta rincian bahan baku.", "Mohon lengkapi bahan baku yang digunakan.")
+      finding("materials", "MATERIAL_EMPTY_WITH_PRODUCTION", "Kelengkapan bahan baku", "HIGH", "Produksi ada tetapi bahan baku tidak terbaca.", `${formatNumber(productionKg)} kg`, "Total produksi > 0, tabel bahan baku kosong.", "Minta rincian bahan baku.", "Mohon lengkapi bahan baku yang digunakan.")
     );
   }
 
@@ -211,7 +276,6 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
   }
 
   const materialKg = sum(report.materials.map((row) => row.domesticKg + row.importKg));
-  const productionKg = totalProductionKg(report);
   if (productionKg > 0 && materialKg > 0) {
     const ratio = materialKg / productionKg;
     if (ratio < 0.2 || ratio > 5) {
@@ -226,6 +290,62 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
           "Rasio = total bahan baku kg / total produksi kg. Rentang sanity default 0,2-5.",
           "Cek apakah seluruh input dan output sudah dilaporkan dalam satuan yang sama.",
           "Mohon klarifikasi rasio input-output bahan baku terhadap produksi."
+        )
+      );
+    }
+  }
+
+  const materialValue = sum(report.materials.map((row) => row.domesticValue + row.importValue));
+  const productValue = productionValue(report);
+  const soldValue = salesValue(report);
+  if (productionKg > 0 && materialValue === 0 && report.materials.length > 0) {
+    findings.push(
+      finding(
+        "materials",
+        "PRODUCTION_WITH_ZERO_MATERIAL_VALUE",
+        "Relasi produksi-bahan baku",
+        "HIGH",
+        "Produksi ada tetapi total nilai bahan baku nol.",
+        `produksi ${formatNumber(productionKg)} kg; nilai bahan baku ${formatRupiah(materialValue)}`,
+        "Produksi kg dibandingkan dengan total nilai bahan baku dalam negeri dan impor.",
+        "Cek apakah nilai bahan baku kosong, salah satuan, atau belum diisi.",
+        "Mohon klarifikasi nilai bahan baku karena produksi sudah dilaporkan."
+      )
+    );
+  }
+  if (materialValue > 0 && Math.max(productValue, soldValue) > 0 && materialValue > Math.max(productValue, soldValue) * 1.2) {
+    findings.push(
+      finding(
+        "materials",
+        "MATERIAL_VALUE_OVER_OUTPUT_VALUE",
+        "Relasi nilai input-output",
+        "MEDIUM",
+        "Nilai bahan baku jauh lebih besar daripada nilai output/penjualan yang terbaca.",
+        `nilai bahan baku ${formatRupiah(materialValue)}; nilai produksi ${formatRupiah(productValue)}; nilai penjualan ${formatRupiah(soldValue)}`,
+        "Total nilai bahan baku dibandingkan dengan nilai produksi dan nilai penjualan. Ini indikator kewajaran, bukan kesimpulan akuntansi.",
+        "Cek kelengkapan nilai produksi/penjualan, persediaan, dan apakah bahan baku termasuk stok untuk periode lain.",
+        "Mohon klarifikasi hubungan nilai bahan baku dengan nilai produksi/penjualan pada periode laporan."
+      )
+    );
+  }
+
+  const openingFinishedGoods = inventoryValue(report, /barang jadi/i, "startValue");
+  const endingFinishedGoods = inventoryValue(report, /barang jadi/i, "endValue");
+  if (productValue > 0 && soldValue > 0 && openingFinishedGoods > 0) {
+    const indicativeEnding = openingFinishedGoods + productValue - soldValue;
+    const tolerance = Math.max(productValue, soldValue, openingFinishedGoods) * 0.35;
+    if (Math.abs(indicativeEnding - endingFinishedGoods) > tolerance) {
+      findings.push(
+        finding(
+          "inventory",
+          "FINISHED_GOODS_VALUE_RECONCILIATION",
+          "Relasi persediaan-produksi-penjualan",
+          "MEDIUM",
+          "Nilai persediaan barang jadi tidak selaras secara indikatif dengan produksi dan penjualan.",
+          `awal barang jadi ${formatRupiah(openingFinishedGoods)}; nilai produksi ${formatRupiah(productValue)}; nilai penjualan ${formatRupiah(soldValue)}; akhir barang jadi ${formatRupiah(endingFinishedGoods)}`,
+          "Estimasi sederhana: persediaan akhir barang jadi kira-kira dipengaruhi persediaan awal + nilai produksi - nilai penjualan. Perbedaan dapat terjadi karena harga pokok, retur, WIP, ekspor, atau klasifikasi nilai.",
+          "Gunakan sebagai catatan klarifikasi ringan bila selisih besar; jangan jadikan satu-satunya dasar penolakan.",
+          "Mohon klarifikasi perubahan persediaan barang jadi terhadap produksi dan penjualan pada periode laporan."
         )
       );
     }
@@ -266,6 +386,42 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
       findings.push(finding("energy", "ELECTRICITY_COST_OUTLIER", "Biaya listrik/kWh", "MEDIUM", "Biaya listrik per kWh di luar rentang sanity.", `${formatRupiah(cost)}/kWh`, "Biaya listrik = nilai PLN / kWh; rentang sanity Rp500-Rp5.000/kWh.", "Cek nilai tagihan dan kWh.", "Mohon klarifikasi biaya listrik per kWh."));
     }
   }
+  if (productionKg > 0 && electricityKwh > 0) {
+    const kwhPerKg = electricityKwh / productionKg;
+    if (kwhPerKg > 5) {
+      findings.push(
+        finding(
+          "energy",
+          "ELECTRICITY_INTENSITY_HIGH",
+          "Relasi produksi-energi",
+          "MEDIUM",
+          "Intensitas listrik terhadap produksi sangat tinggi.",
+          `${formatNumber(kwhPerKg, 3)} kWh/kg`,
+          "Intensitas listrik = kWh PLN / kg produksi. Threshold sanity awal >5 kWh/kg.",
+          "Cek kWh, kg produksi, dan apakah listrik mencakup aktivitas non-produksi.",
+          "Mohon klarifikasi intensitas listrik terhadap produksi."
+        )
+      );
+    }
+  }
+  if (productionKg > 0 && waterTotal > 0) {
+    const waterPerKg = waterTotal / productionKg;
+    if (waterPerKg > 0.5) {
+      findings.push(
+        finding(
+          "water",
+          "WATER_INTENSITY_HIGH",
+          "Relasi produksi-air",
+          "MEDIUM",
+          "Intensitas penggunaan air terhadap produksi sangat tinggi.",
+          `${formatNumber(waterPerKg, 4)} m3/kg`,
+          "Intensitas air = total m3 air proses / kg produksi. Threshold sanity awal >0,5 m3/kg.",
+          "Cek volume air, kg produksi, dan apakah air mencakup utilitas non-produksi.",
+          "Mohon klarifikasi intensitas penggunaan air terhadap produksi."
+        )
+      );
+    }
+  }
 
   const wage = Number(report.expenses["Upah/gaji untuk pekerja produksi"] ?? 0) + Number(report.expenses["Upah/gaji untuk pekerja lainnya"] ?? 0);
   if (report.labor.totalWorkers > 0 && wage > 0) {
@@ -285,17 +441,33 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
     if (made > 0 && acquired > 0 && acquired < made) findings.push(finding("machines", "MACHINE_ACQUIRED_BEFORE_MADE", "Tahun mesin", "HIGH", "Tahun perolehan sebelum tahun pembuatan.", row.Mesin, "Tahun perolehan < tahun pembuatan.", "Cek tahun mesin.", "Mohon cek tahun pembuatan dan perolehan mesin."));
   }
 
+  const solidWasteKg = sum(report.solidWasteRows.map((row) => rowQuantityKg(row, "ton")));
   if (productionKg > 0 && report.solidWasteRows.length === 0) {
     findings.push(finding("solidWaste", "NO_SOLID_WASTE_WITH_PRODUCTION", "Limbah padat", "MEDIUM", "Produksi ada tetapi data limbah padat tidak terbaca.", `${formatNumber(productionKg)} kg`, "Produksi > 0 dan tabel limbah padat kosong.", "Cek pernyataan nihil atau data limbah.", "Mohon klarifikasi limbah padat."));
+  }
+  if (productionKg > 0 && solidWasteKg > 0) {
+    const solidWasteRatio = solidWasteKg / productionKg;
+    if (solidWasteRatio > 0.3) {
+      findings.push(
+        finding(
+          "solidWaste",
+          "SOLID_WASTE_RATIO_HIGH",
+          "Relasi produksi-limbah padat",
+          "MEDIUM",
+          "Rasio limbah padat terhadap produksi tinggi secara indikatif.",
+          `limbah padat ${formatNumber(solidWasteKg)} kg; produksi ${formatNumber(productionKg)} kg; rasio ${formatNumber(solidWasteRatio, 3)}`,
+          "Rasio = total limbah padat kg / total produksi kg. Threshold sanity awal >30%.",
+          "Cek jenis limbah, satuan ton/kg, dan apakah limbah berasal dari stok/proses periode lain.",
+          "Mohon klarifikasi jumlah limbah padat terhadap volume produksi."
+        )
+      );
+    }
   }
   if (report.liquidWaste.codOutlet > report.liquidWaste.codInlet && report.liquidWaste.codInlet > 0) {
     findings.push(finding("liquidWaste", "COD_OUTLET_OVER_INLET", "COD limbah cair", report.liquidWaste.codOutlet > report.liquidWaste.codInlet * 1.5 ? "CRITICAL" : "HIGH", "COD outlet lebih tinggi daripada COD inlet.", `inlet ${formatNumber(report.liquidWaste.codInlet, 2)}; outlet ${formatNumber(report.liquidWaste.codOutlet, 2)}`, "COD outlet seharusnya tidak lebih tinggi daripada inlet setelah pengolahan.", "Cek angka COD inlet/outlet atau proses IPAL.", "Mohon klarifikasi COD inlet dan outlet."));
   }
-  if (report.liquidWaste.inletDebit === 0 && report.liquidWaste.outletDebit > 0) {
-    findings.push(finding("liquidWaste", "INLET_ZERO_OUTLET_POSITIVE", "Debit limbah cair", "HIGH", "Debit inlet nol tetapi outlet positif.", `inlet ${report.liquidWaste.inletDebit}; outlet ${report.liquidWaste.outletDebit}`, "Debit inlet/outlet pada periode yang sama perlu konsisten.", "Cek satuan atau salah input debit.", "Mohon klarifikasi debit limbah cair inlet dan outlet."));
-  }
   if (report.liquidWaste.outletDebit > 10 || report.liquidWaste.inletDebit > 10) {
-    findings.push(finding("liquidWaste", "LIQUID_WASTE_DEBIT_TOO_HIGH", "Debit limbah cair", "HIGH", "Debit limbah cair sangat besar; kemungkinan salah satuan.", `inlet ${report.liquidWaste.inletDebit} m3/detik; outlet ${report.liquidWaste.outletDebit} m3/detik`, "Sanity check debit m3/detik > 10.", "Cek apakah satuan sebenarnya m3/hari atau m3/jam.", "Mohon pastikan satuan debit limbah cair."));
+    findings.push(finding("liquidWaste", "LIQUID_WASTE_DEBIT_TOO_HIGH", "Debit limbah cair", "MEDIUM", "Debit limbah cair perlu dicek satuan/definisinya.", `inlet ${report.liquidWaste.inletDebit} m3/detik; outlet ${report.liquidWaste.outletDebit} m3/detik`, "Jika benar m3/detik, angka >10 m3/detik tergolong sangat besar. Namun pada pelaporan, angka debit kadang merepresentasikan volume periode atau satuan lain; rule ini hanya catatan klarifikasi satuan.", "Cek apakah angka adalah m3/detik, m3/hari, m3/bulan, atau total volume periode.", "Mohon pastikan satuan dan definisi angka debit limbah cair yang dilaporkan."));
   }
 
   const score = riskScore(findings);

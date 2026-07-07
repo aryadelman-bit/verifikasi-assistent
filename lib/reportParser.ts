@@ -292,6 +292,21 @@ function parseSimpleNumberRows(text: string): TableRow[] {
     }));
 }
 
+function parseWasteRows(text: string): TableRow[] {
+  const simpleRows = parseSimpleNumberRows(text);
+  if (simpleRows.length > 0) return simpleRows;
+
+  return getLines(text)
+    .map((line) => line.match(/^(?:\d+\.?\s+)?(.+?)\s+([\d.,]+)\s*(ton|kg|kilogram)\b/i))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .map((match, index) => ({
+      No: String(index + 1),
+      Uraian: match[1].trim(),
+      Jumlah: `${match[2]} ${match[3]}`,
+      Nilai: ""
+    }));
+}
+
 function parseExpenses(text: string): Record<string, number | string> {
   const result: Record<string, number | string> = {};
   for (const line of getLines(text)) {
@@ -363,8 +378,8 @@ export function parseReportFromText(text: string, fileName = "laporan.pdf"): Par
     expenses: parseExpenses(sectionsText.expenses),
     productionPlanRows: parseSimpleNumberRows(sectionsText.productionPlan),
     machineRows: parseMachineRows(sectionsText.machines),
-    solidWasteRows: parseSimpleNumberRows(sectionsText.solidWaste),
-    hazardousWasteRows: parseSimpleNumberRows(sectionsText.hazardousWaste),
+    solidWasteRows: parseWasteRows(sectionsText.solidWaste),
+    hazardousWasteRows: parseWasteRows(sectionsText.hazardousWaste),
     liquidWaste: parseLiquidWaste(sectionsText.liquidWaste),
     parserWarnings
   };
