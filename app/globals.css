@@ -1,0 +1,448 @@
+:root {
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --panel-soft: #f8fafc;
+  --line: #d8dee9;
+  --text: #182235;
+  --muted: #637083;
+  --ok: #0f8a5f;
+  --warn: #b7791f;
+  --danger: #b42318;
+  --critical: #7f1d1d;
+  --blue: #1f5eff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.appShell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  padding: 20px;
+  border-right: 1px solid var(--line);
+  background: #eef2f7;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.brand span,
+small {
+  color: var(--muted);
+}
+
+.uploadBox {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px dashed #9aa8bd;
+  border-radius: 8px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.uploadBox input {
+  display: none;
+}
+
+.uploadBox strong,
+.uploadBox small {
+  display: block;
+}
+
+.uploadIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #e7edff;
+  color: var(--blue);
+}
+
+.statusBox,
+.errorBox {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.errorBox {
+  color: var(--danger);
+  border-color: #ffc9c9;
+  background: #fff3f3;
+}
+
+.sectionNav {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.sectionNav button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sectionNav button.active,
+.sectionNav button:hover {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.sectionNav b {
+  color: var(--muted);
+}
+
+.content {
+  padding: 24px;
+  overflow: hidden;
+}
+
+.emptyState {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  min-height: calc(100vh - 48px);
+  text-align: center;
+}
+
+.emptyState p {
+  max-width: 620px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.reportHeader,
+.sectionHeader,
+.panelTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reportHeader h2,
+.sectionHeader h2,
+.panel h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.reportHeader p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.scoreCard,
+.miniScore,
+.metric,
+.panel,
+.sectionPanel,
+.sectionCard {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.scoreCard {
+  display: grid;
+  gap: 8px;
+  min-width: 280px;
+  padding: 14px;
+}
+
+.scoreCard strong {
+  font-size: 30px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.badgeOk {
+  color: var(--ok);
+  background: #e8f7ef;
+}
+
+.badgeWarn {
+  color: var(--warn);
+  background: #fff7df;
+}
+
+.badgeDanger {
+  color: var(--danger);
+  background: #fff1f0;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.metric {
+  min-height: 82px;
+  padding: 12px;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+.warningStrip {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--warn);
+  background: #fff7df;
+}
+
+.twoCol,
+.sectionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.panel,
+.sectionPanel {
+  padding: 16px;
+}
+
+.panel textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text);
+  background: var(--panel-soft);
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 8px;
+}
+
+.miniScore {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.miniScore span {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.sectionCard {
+  min-height: 220px;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.sectionCard h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.sectionCard pre {
+  max-height: 280px;
+  overflow: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  color: #39465a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.noteList {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.noteList li {
+  margin-bottom: 10px;
+  line-height: 1.45;
+}
+
+.noteList span {
+  display: block;
+  color: var(--muted);
+}
+
+.tableWrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th,
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  text-align: left;
+}
+
+th {
+  color: #39465a;
+  background: #f1f4f9;
+}
+
+.severity {
+  display: inline-block;
+  min-width: 72px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sevCRITICAL {
+  color: white;
+  background: var(--critical);
+}
+
+.sevHIGH {
+  color: white;
+  background: var(--danger);
+}
+
+.sevMEDIUM {
+  color: #5c3b00;
+  background: #ffd166;
+}
+
+.sevLOW {
+  color: #24466f;
+  background: #d8e8ff;
+}
+
+.sevINFO {
+  color: #345246;
+  background: #dff5eb;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+@media (max-width: 1100px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: relative;
+    height: auto;
+  }
+
+  .metricGrid,
+  .twoCol,
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .content,
+  .sidebar {
+    padding: 14px;
+  }
+
+  .reportHeader,
+  .sectionHeader {
+    display: grid;
+  }
+
+  .scoreCard {
+    min-width: 0;
+  }
+}

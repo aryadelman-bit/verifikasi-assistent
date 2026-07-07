@@ -1,0 +1,29 @@
+enabled_rules:
+  completeness: true
+  identity: true
+  capacity: true
+  production_inventory: true
+  material: true
+  helper_material: true
+  energy_water: true
+  labor: true
+  investment: true
+  machine: true
+  waste: true
+  indi: true
+risk_weights:
+  CRITICAL: 25
+  HIGH: 15
+  MEDIUM: 8
+  LOW: 3
+  INFO: 0
+required_sections:
+  - identitas
+  - umum
+  - investasi
+  - kapasitas
+  - produksi_penjualan
+  - bahan_baku
+  - tenaga_kerja
+  - air_energi
+  - surat_pernyataan
