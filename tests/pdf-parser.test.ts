@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_PRICE_LIMITS } from "../lib/defaultPriceLimits";
 import { parsePriceLimits } from "../lib/priceLimits";
 import { parseReportFromText } from "../lib/reportParser";
 import { validateReport } from "../lib/validator";
@@ -107,5 +108,14 @@ describe("PDF report parser", () => {
     expect(result.findings.some((finding) => finding.ruleId === "PRICE_OUTSIDE_KBLI_LIMIT")).toBe(true);
     expect(result.findings.some((finding) => finding.ruleId === "LIQUID_WASTE_DEBIT_TOO_HIGH")).toBe(true);
     expect(result.findings.some((finding) => finding.ruleId === "OWNERSHIP_NOT_100")).toBe(false);
+  });
+
+  it("uses bundled KBLI price limits so validators only upload the quarterly report", () => {
+    const report = parseReportFromText(reportText, "agro.pdf");
+    const result = validateReport(report, DEFAULT_PRICE_LIMITS);
+
+    expect(Object.keys(DEFAULT_PRICE_LIMITS).length).toBeGreaterThan(100);
+    expect(DEFAULT_PRICE_LIMITS["10437"]?.upper).toBe(17939);
+    expect(result.findings.some((finding) => finding.ruleId === "PRICE_OUTSIDE_KBLI_LIMIT")).toBe(true);
   });
 });

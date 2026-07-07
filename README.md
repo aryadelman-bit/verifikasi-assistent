@@ -6,7 +6,8 @@ PDF diproses di browser menggunakan `pdfjs-dist`. Aplikasi tidak meminta usernam
 
 ## Fitur
 
-- Upload PDF laporan produksi dan PDF batas kewajaran harga per KBLI.
+- Upload PDF laporan produksi triwulanan.
+- Batas kewajaran harga per KBLI sudah menjadi data bawaan aplikasi.
 - Ekstraksi teks PDF di sisi browser.
 - Parsing bagian laporan: identitas, data umum, persediaan, kapasitas, produksi dan penjualan, bahan baku, bahan penolong, investasi, tenaga kerja, prakerin, air, energi, pengeluaran, rencana produksi, mesin, limbah padat, limbah B3, dan limbah cair.
 - Validasi rule-based per bagian dengan severity `LOW`, `MEDIUM`, `HIGH`, dan `CRITICAL`.
@@ -39,10 +40,9 @@ Buka `http://127.0.0.1:3000`.
 Cara pakai:
 
 1. Upload PDF laporan produksi.
-2. Upload PDF batas kewajaran harga per KBLI.
-3. Hasil analisis otomatis muncul setelah file terbaca.
-4. Baca ringkasan, temuan per bagian, dan catatan validator.
-5. Klik ikon export pada panel `Catatan Validator` bila perlu menyimpan HTML report.
+2. Hasil analisis otomatis muncul setelah file terbaca.
+3. Baca ringkasan, temuan per bagian, dan catatan validator.
+4. Klik ikon export pada panel `Catatan Validator` bila perlu menyimpan HTML report.
 
 ## Testing
 
@@ -77,7 +77,8 @@ Catatan privasi: parsing PDF saat ini berjalan di browser pengguna. Jangan menam
 - `components/ValidatorApp.tsx` - UI upload, validasi, ringkasan, tabel temuan, dan export.
 - `lib/pdfText.ts` - ekstraksi teks PDF menggunakan PDF.js.
 - `lib/reportParser.ts` - parser bagian laporan sampai Pengelolaan Limbah Cair.
-- `lib/priceLimits.ts` - parser batas kewajaran harga per KBLI.
+- `lib/defaultPriceLimits.ts` - batas kewajaran harga per KBLI bawaan aplikasi.
+- `lib/priceLimits.ts` - parser utilitas bila referensi harga perlu diregenerasi dari teks PDF.
 - `lib/validator.ts` - rules engine dan risk score.
 - `tests/` - unit test parser dan validasi.
 
@@ -87,4 +88,4 @@ Jika PDF tidak terbaca, cek apakah file hasil scan gambar. Versi awal ini membac
 
 Jika bagian tertentu kosong, struktur PDF kemungkinan berbeda. Aplikasi tetap menampilkan warning parser agar pola section di `lib/reportParser.ts` bisa disesuaikan.
 
-Jika batas harga KBLI tidak masuk, pastikan PDF referensi memiliki baris KBLI dengan pola kode 5 digit dan rentang harga numerik.
+Jika batas harga KBLI perlu diperbarui, regenerasi `lib/defaultPriceLimits.ts` dari PDF/Excel sumber lalu deploy ulang aplikasi.

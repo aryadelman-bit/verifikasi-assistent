@@ -2,12 +2,12 @@
 
 import { AlertTriangle, CheckCircle2, Clipboard, Download, FileText, Scale, Upload, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DEFAULT_PRICE_LIMITS } from "@/lib/defaultPriceLimits";
 import { extractPdfText } from "@/lib/pdfText";
-import { parsePriceLimits } from "@/lib/priceLimits";
 import { parseReportFromText, SECTION_LABELS } from "@/lib/reportParser";
 import { buildValidatorNote, validateReport } from "@/lib/validator";
 import { formatNumber, formatRupiah } from "@/lib/number";
-import type { Finding, ParsedReport, PriceLimitMap, ReportSectionKey, SectionSummary, ValidationResult } from "@/lib/types";
+import type { Finding, ParsedReport, ReportSectionKey, SectionSummary, ValidationResult } from "@/lib/types";
 
 const SECTION_KEYS = Object.keys(SECTION_LABELS) as ReportSectionKey[];
 
@@ -192,30 +192,22 @@ function DataPreview({ report }: { report: ParsedReport }) {
 
 export function ValidatorApp() {
   const [reportFileName, setReportFileName] = useState("");
-  const [limitFileName, setLimitFileName] = useState("");
   const [reportText, setReportText] = useState("");
-  const [limitText, setLimitText] = useState("");
   const [activeKey, setActiveKey] = useState<ReportSectionKey>("identity");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
-  const priceLimits: PriceLimitMap = useMemo(() => (limitText ? parsePriceLimits(limitText) : {}), [limitText]);
   const report = useMemo(() => (reportText ? parseReportFromText(reportText, reportFileName) : null), [reportText, reportFileName]);
-  const result = useMemo(() => (report ? validateReport(report, priceLimits) : null), [report, priceLimits]);
+  const result = useMemo(() => (report ? validateReport(report, DEFAULT_PRICE_LIMITS) : null), [report]);
   const validatorNote = useMemo(() => (result ? buildValidatorNote(result) : ""), [result]);
 
-  async function loadPdf(file: File, target: "report" | "limit") {
+  async function loadPdf(file: File) {
     setError("");
     setBusy(`Membaca ${file.name}`);
     try {
       const text = await extractPdfText(file);
-      if (target === "report") {
-        setReportFileName(file.name);
-        setReportText(text);
-      } else {
-        setLimitFileName(file.name);
-        setLimitText(text);
-      }
+      setReportFileName(file.name);
+      setReportText(text);
     } catch (err) {
       setError(err instanceof Error ? err.message : "PDF tidak dapat dibaca.");
     } finally {
@@ -303,12 +295,11 @@ export function ValidatorApp() {
             <span>IntraNEW/SIINas</span>
           </div>
         </div>
-        <FilePicker label="Laporan PDF" fileName={reportFileName} onFile={(file) => loadPdf(file, "report")} />
-        <FilePicker label="Batas Harga KBLI" fileName={limitFileName} onFile={(file) => loadPdf(file, "limit")} />
+        <FilePicker label="Laporan Triwulanan PDF" fileName={reportFileName} onFile={loadPdf} />
         <div className="statusBox">
           <small>Status</small>
           <strong>{busy || (report ? "Siap divalidasi" : "Menunggu PDF")}</strong>
-          <span>{Object.keys(priceLimits).length} batas KBLI terbaca</span>
+          <span>{Object.keys(DEFAULT_PRICE_LIMITS).length} batas harga KBLI bawaan aktif</span>
         </div>
         {error ? <div className="errorBox">{error}</div> : null}
         {result ? (
@@ -331,8 +322,8 @@ export function ValidatorApp() {
         {!report || !result ? (
           <div className="emptyState">
             <FileText size={44} />
-            <h2>Unggah laporan PDF dan batas harga KBLI</h2>
-            <p>Aplikasi akan membaca PDF di browser, menilai kewajaran sampai bagian Pengelolaan Limbah Cair, lalu membuat catatan per bagian dan rekomendasi keseluruhan.</p>
+            <h2>Unggah laporan triwulanan PDF</h2>
+            <p>Aplikasi memakai batas harga KBLI bawaan, membaca PDF di browser, menilai kewajaran sampai bagian Pengelolaan Limbah Cair, lalu membuat catatan per bagian dan rekomendasi keseluruhan.</p>
           </div>
         ) : (
           <>
