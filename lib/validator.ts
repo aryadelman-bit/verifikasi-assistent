@@ -220,6 +220,8 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
     );
   }
 
+  const openingFinishedGoods = inventoryValue(report, /barang jadi/i, "startValue");
+  const endingFinishedGoods = inventoryValue(report, /barang jadi/i, "endValue");
   for (const row of report.production) {
     const productionPrice = row.productionKg > 0 ? row.productionValue / row.productionKg : 0;
     const salesPrice = row.salesKg > 0 ? row.salesValue / row.salesKg : 0;
@@ -250,6 +252,52 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
       findings.push(
         finding("production", "PROD_QTY_WITH_ZERO_VALUE", "Nilai produksi", "HIGH", "Produksi ada tetapi nilai produksi nol.", row.product, "Jumlah kg > 0 dan nilai = 0.", "Cek pengisian nilai produksi.", "Mohon pastikan nilai produksi sudah diisi.")
       );
+    }
+    if (row.salesKg > row.productionKg && row.productionKg >= 0) {
+      const excessKg = row.salesKg - row.productionKg;
+      if (row.stockSoldFlag) {
+        findings.push(
+          finding(
+            "production",
+            "SALES_OVER_PRODUCTION_WITH_STOCK",
+            "Relasi penjualan-produksi-stok",
+            "INFO",
+            "Penjualan melebihi produksi, tetapi ditopang flag stok yang dijual.",
+            `${row.product}: penjualan ${formatNumber(row.salesKg)} kg; produksi ${formatNumber(row.productionKg)} kg; selisih ${formatNumber(excessKg)} kg`,
+            "Juknis: penjualan > produksi tidak otomatis invalid bila ada flag stok/persediaan yang mendukung.",
+            "Cek sekilas persediaan awal/akhir barang jadi untuk memastikan stok memang memadai.",
+            `Mohon pastikan penjualan ${row.product} yang melebihi produksi berasal dari stok.`
+          )
+        );
+      } else if (openingFinishedGoods > 0) {
+        findings.push(
+          finding(
+            "production",
+            "SALES_OVER_PRODUCTION_WITH_INVENTORY_BUT_NO_FLAG",
+            "Relasi penjualan-produksi-stok",
+            "MEDIUM",
+            "Penjualan melebihi produksi tanpa flag stok, tetapi ada persediaan awal barang jadi.",
+            `${row.product}: penjualan ${formatNumber(row.salesKg)} kg; produksi ${formatNumber(row.productionKg)} kg; persediaan awal barang jadi ${formatRupiah(openingFinishedGoods)}`,
+            "Penjualan lebih besar daripada produksi. Persediaan awal barang jadi dapat menjelaskan sebagian, tetapi flag stok tidak mendukung.",
+            "Minta klarifikasi apakah penjualan berasal dari stok awal dan apakah flag stok perlu diperbaiki.",
+            `Mohon klarifikasi sumber penjualan ${row.product} yang melebihi produksi dan perbaiki flag stok bila diperlukan.`
+          )
+        );
+      } else {
+        findings.push(
+          finding(
+            "production",
+            "SALES_OVER_PRODUCTION_WITHOUT_STOCK",
+            "Relasi penjualan-produksi-stok",
+            "HIGH",
+            "Penjualan melebihi produksi tanpa dukungan flag stok atau persediaan awal barang jadi.",
+            `${row.product}: penjualan ${formatNumber(row.salesKg)} kg; produksi ${formatNumber(row.productionKg)} kg`,
+            "Juknis: penjualan > produksi harus didukung stok awal, flag stok, atau log persediaan.",
+            "Cek produksi, penjualan, stok yang dijual, dan persediaan barang jadi.",
+            `Mohon klarifikasi penjualan ${row.product} yang melebihi produksi karena belum terlihat dukungan stok.`
+          )
+        );
+      }
     }
   }
 
@@ -329,8 +377,6 @@ export function validateReport(report: ParsedReport, limits: PriceLimitMap): Val
     );
   }
 
-  const openingFinishedGoods = inventoryValue(report, /barang jadi/i, "startValue");
-  const endingFinishedGoods = inventoryValue(report, /barang jadi/i, "endValue");
   if (productValue > 0 && soldValue > 0 && openingFinishedGoods > 0) {
     const indicativeEnding = openingFinishedGoods + productValue - soldValue;
     const tolerance = Math.max(productValue, soldValue, openingFinishedGoods) * 0.35;

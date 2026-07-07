@@ -67,6 +67,7 @@ export type ProductionRow = {
   salesQty: number;
   salesKg: number;
   salesValue: number;
+  stockSoldFlag: boolean;
   exportPercent: number;
 };
 

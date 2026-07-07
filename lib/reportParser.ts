@@ -214,6 +214,7 @@ export function parseProductionRows(text: string): ProductionRow[] {
     const values = [...rest.matchAll(/[\d.]+,\d{2}|[\d.]+/g)].map((match) => match[0]);
     if (values.length < 6) continue;
     const unitMatch = rest.match(/\b(kilogram|kg|ton|liter|ct|unit)\b/i);
+    const stockSoldMatch = rest.match(/\b(Ya|Tidak)\b\s+\d+(?:,\d+)?%/i);
     const exportPercent = rest.match(/(\d+(?:,\d+)?)%/);
     rows.push({
       product: productRaw.replace(/\(.*?\)/g, "").trim(),
@@ -226,6 +227,7 @@ export function parseProductionRows(text: string): ProductionRow[] {
       salesQty: parseIndonesianNumber(values[3]) ?? 0,
       salesKg: parseIndonesianNumber(values[4]) ?? 0,
       salesValue: parseIndonesianNumber(values[5]) ?? 0,
+      stockSoldFlag: /^ya$/i.test(stockSoldMatch?.[1] ?? ""),
       exportPercent: parseIndonesianNumber(exportPercent?.[1] ?? "0") ?? 0
     });
   }

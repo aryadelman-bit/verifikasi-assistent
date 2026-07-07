@@ -123,6 +123,10 @@ Indi 4.0
 `;
 
 const commaSolidWasteText = reportText.replace("1. Spent bleaching earth 12", "Limbah padat organik 0,9 ton");
+const salesOverProductionWithoutStockText = reportText.replace(
+  "8.620.969,00 8.620.969,00 138.662.986.173 Ya 0,00%",
+  "8.620.969,00 8.620.969,00 138.662.986.173 Tidak 0,00%"
+);
 
 describe("PDF report parser", () => {
   it("parses the report until liquid waste and ignores sections below it", () => {
@@ -130,6 +134,7 @@ describe("PDF report parser", () => {
     expect(report.companyName).toBe("PT Agro Makmur Raya");
     expect(report.capacity).toHaveLength(1);
     expect(report.production).toHaveLength(1);
+    expect(report.production[0].stockSoldFlag).toBe(true);
     expect(report.materials).toHaveLength(1);
     expect(report.helpers).toHaveLength(1);
     expect(report.liquidWaste.outletDebit).toBe(875);
@@ -176,5 +181,13 @@ describe("PDF report parser", () => {
     expect(report.solidWasteRows).toHaveLength(1);
     expect(report.solidWasteRows[0].Jumlah).toBe("0,9 ton");
     expect(result.findings.some((finding) => finding.ruleId === "NO_SOLID_WASTE_WITH_PRODUCTION")).toBe(false);
+  });
+
+  it("treats sales over production as conditional on stock support", () => {
+    const supported = validateReport(parseReportFromText(reportText, "supported-stock.pdf"), DEFAULT_PRICE_LIMITS);
+    const unsupported = validateReport(parseReportFromText(salesOverProductionWithoutStockText, "no-stock.pdf"), DEFAULT_PRICE_LIMITS);
+
+    expect(supported.findings.find((finding) => finding.ruleId === "SALES_OVER_PRODUCTION_WITH_STOCK")?.severity).toBe("INFO");
+    expect(unsupported.findings.some((finding) => finding.ruleId === "SALES_OVER_PRODUCTION_WITHOUT_STOCK")).toBe(true);
   });
 });
