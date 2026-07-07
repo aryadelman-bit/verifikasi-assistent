@@ -11,7 +11,7 @@ import type {
   TableRow
 } from "./types";
 
-type Marker = { key: ReportSectionKey; label: string; test: (line: string) => boolean };
+type Marker = { key: ReportSectionKey; label: string; test: (line: string, index: number, lines: string[]) => boolean };
 
 export const SECTION_LABELS: Record<ReportSectionKey, string> = {
   identity: "Identitas dan Perizinan",
@@ -37,7 +37,16 @@ export const SECTION_LABELS: Record<ReportSectionKey, string> = {
 const MARKERS: Marker[] = [
   { key: "general", label: "Data Umum", test: (line) => /^Data Umum$/i.test(line) },
   { key: "inventory", label: "Persediaan", test: (line) => /^Persediaan$/i.test(line) },
-  { key: "capacity", label: "Kapasitas Produksi", test: (line) => /^Kapasitas Produksi\s+Kapasitas/i.test(line) },
+  {
+    key: "capacity",
+    label: "Kapasitas Produksi",
+    test: (line, index, lines) => {
+      if (!/^Kapasitas Produksi\b/i.test(line)) return false;
+      if (/^Kapasitas Produksi\s+-\s+KBLI\b/i.test(line)) return false;
+      const context = lines.slice(index, index + 5).join(" ");
+      return /Kapasitas\s+(Sebelum OSS|OSS|Produksi|Terpasang)|Kode\s+HS|No\.?\s+Nama\s+Produk/i.test(context);
+    }
+  },
   { key: "production", label: "Produksi dan Penjualan", test: (line) => /^Produksi dan Penjualan$/i.test(line) },
   { key: "materials", label: "Bahan Baku", test: (line) => /^Bahan Baku$/i.test(line) },
   { key: "helpers", label: "Bahan Penolong", test: (line) => /^Bahan Penolong$/i.test(line) },
@@ -78,6 +87,7 @@ const SECTION_ORDER: ReportSectionKey[] = [
 function normalizeText(text: string): string {
   return text
     .replace(/\u00a0/g, " ")
+    .replace(/[\uf0f6\uf081]/g, "")
     .replace(/[]/g, "")
     .replace(/\r/g, "")
     .replace(/[ \t]+/g, " ")
@@ -99,10 +109,15 @@ function cutAfterLiquidWaste(lines: string[]): string[] {
 
 function sectionize(lines: string[]): Record<ReportSectionKey, string> {
   const limited = cutAfterLiquidWaste(lines);
-  const hits = MARKERS.map((marker) => ({
-    ...marker,
-    index: limited.findIndex(marker.test)
-  })).filter((marker) => marker.index >= 0);
+  const hits: Array<Marker & { index: number }> = [];
+  let searchFrom = 0;
+  for (const marker of MARKERS) {
+    const relativeIndex = limited.slice(searchFrom).findIndex((line, offset) => marker.test(line, searchFrom + offset, limited));
+    if (relativeIndex < 0) continue;
+    const index = searchFrom + relativeIndex;
+    hits.push({ ...marker, index });
+    searchFrom = index + 1;
+  }
 
   const sections = Object.fromEntries(SECTION_ORDER.map((key) => [key, ""])) as Record<ReportSectionKey, string>;
   const firstMarker = Math.min(...hits.map((hit) => hit.index), limited.length);

@@ -85,6 +85,43 @@ const limitText = `
 10423 Industri minyak goreng bukan kelapa sawit 13.500 35.150 0 0 0 0
 `;
 
+const overlappingInventoryCapacityText = `
+PT Contoh Overlap
+NIB 1234567890123
+Perizinan Izin Usaha Industri
+Bidang Usaha KBLI 10437
+Kapasitas Produksi - KBLI 10437 (RBD OLEIN) (292000.00000 TNE) (Dit. IMHLP)
+Buka
+Data Umum
+Periode Laporan Triwulan 2 Tahun 2026
+Status Berproduksi
+Buka
+Nama Penanda Tangan Laporan Budi Santoso
+Jabatan Direktur
+Buka
+Persediaan
+Jenis Persediaan Awal (Rp.) Akhir (Rp.)
+Nilai persediaan bahan baku, bahan penolong, bahan bakar, bahan pembungkus, dan lain-lain 38.785.000.000 105.970.000.000
+Nilai persediaan barang jadi yang dihasilkan 134.022.000.000 0
+Kapasitas Produksi
+Kapasitas Sebelum OSS Kapasitas OSS 1.1
+1. RBD Olein 10437 15119037 73.000 ton 73.000 ton 73.000.000 Kilogram 73.000.000 Kilogram
+Buka
+Produksi dan Penjualan
+1. RBD OLEIN 10437 15119037 kilogram 6.755.001,00 6.755.001,00 300.000.000.000 8.620.969,00 8.620.969,00 138.662.986.173 Ya 0,00%
+Buka
+Bahan Baku
+1 CPO 15131190 kilogram 8.702.975,00 8.702.975,00 100.000.000.000 0,00 0,00 0 10437 0,00 0
+Buka
+Pengelolaan Limbah Cair
+Debit limbah cair di inlet 0.00
+Debit limbah cair di outlet 0.00
+COD pada saluran inlet (sebelum diolah di IPAL) 0
+COD pada saluran outlet (titik pemetaan) 0
+Sludge removed 0
+Indi 4.0
+`;
+
 describe("PDF report parser", () => {
   it("parses the report until liquid waste and ignores sections below it", () => {
     const report = parseReportFromText(reportText, "agro.pdf");
@@ -117,5 +154,15 @@ describe("PDF report parser", () => {
     expect(Object.keys(DEFAULT_PRICE_LIMITS).length).toBeGreaterThan(100);
     expect(DEFAULT_PRICE_LIMITS["10437"]?.upper).toBe(17939);
     expect(result.findings.some((finding) => finding.ruleId === "PRICE_OUTSIDE_KBLI_LIMIT")).toBe(true);
+  });
+
+  it("keeps capacity rows out of inventory when section titles overlap", () => {
+    const report = parseReportFromText(overlappingInventoryCapacityText, "overlap.pdf");
+
+    expect(report.inventory).toHaveLength(2);
+    expect(report.capacity).toHaveLength(1);
+    expect(report.sectionsText.inventory).not.toContain("RBD Olein 10437");
+    expect(report.sectionsText.capacity).toContain("RBD Olein 10437");
+    expect(report.parserWarnings).not.toContain("Bagian Kapasitas Produksi tidak ditemukan pada teks PDF.");
   });
 });
