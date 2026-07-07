@@ -33,3 +33,5 @@ browser_profiles/*
 # Office/export temporaries
 ~$*
 *.tmp
+
+.vercel
