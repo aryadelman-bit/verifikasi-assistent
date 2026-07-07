@@ -1,0 +1,2 @@
+"""IntraNEW local validation application."""
+
