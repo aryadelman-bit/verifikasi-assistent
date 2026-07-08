@@ -7,6 +7,7 @@ PDF diproses di browser menggunakan `pdfjs-dist`. Aplikasi tidak meminta usernam
 ## Fitur
 
 - Upload PDF laporan produksi triwulanan.
+- Import manual HTML halaman detail atau CSV hasil download IntraNEW.
 - Batas kewajaran harga per KBLI sudah menjadi data bawaan aplikasi.
 - Ekstraksi teks PDF di sisi browser.
 - Parsing bagian laporan: identitas, data umum, persediaan, kapasitas, produksi dan penjualan, bahan baku, bahan penolong, investasi, tenaga kerja, prakerin, air, energi, pengeluaran, rencana produksi, mesin, limbah padat, limbah B3, dan limbah cair.
@@ -40,9 +41,12 @@ Buka `http://127.0.0.1:3000`.
 Cara pakai:
 
 1. Upload PDF laporan produksi.
-2. Hasil analisis otomatis muncul setelah file terbaca.
-3. Baca ringkasan, temuan per bagian, dan catatan validator.
-4. Klik ikon export pada panel `Catatan Validator` bila perlu menyimpan HTML report.
+2. Atau upload file HTML/CSV IntraNEW melalui `Import HTML/CSV IntraNEW`.
+3. Hasil analisis otomatis muncul setelah file terbaca.
+4. Baca ringkasan, temuan per bagian, dan catatan validator.
+5. Klik ikon export pada panel `Catatan Validator` bila perlu menyimpan HTML report.
+
+Untuk tahap import manual, file yang paling stabil adalah CSV `produksi`, `bahanbaku`, `bahanpenolong`, dan bila tersedia `kapasitas`. HTML halaman detail juga dapat diunggah sebagai sumber teks tambahan. File diproses di browser dan tidak dikirim ke layanan eksternal.
 
 ## Testing
 
@@ -76,6 +80,7 @@ Catatan privasi: parsing PDF saat ini berjalan di browser pengguna. Jangan menam
 - `app/` - halaman Next.js.
 - `components/ValidatorApp.tsx` - UI upload, validasi, ringkasan, tabel temuan, dan export.
 - `lib/pdfText.ts` - ekstraksi teks PDF menggunakan PDF.js.
+- `lib/intranewImport.ts` - import manual HTML/CSV IntraNEW ke bentuk teks yang kompatibel dengan parser.
 - `lib/reportParser.ts` - parser bagian laporan sampai Pengelolaan Limbah Cair.
 - `lib/defaultPriceLimits.ts` - batas kewajaran harga per KBLI bawaan aplikasi.
 - `lib/priceLimits.ts` - parser utilitas bila referensi harga perlu diregenerasi dari teks PDF.
@@ -87,5 +92,7 @@ Catatan privasi: parsing PDF saat ini berjalan di browser pengguna. Jangan menam
 Jika PDF tidak terbaca, cek apakah file hasil scan gambar. Versi awal ini membaca teks PDF digital, bukan OCR.
 
 Jika bagian tertentu kosong, struktur PDF kemungkinan berbeda. Aplikasi tetap menampilkan warning parser agar pola section di `lib/reportParser.ts` bisa disesuaikan.
+
+Jika import CSV tidak terbaca, cek nama/header file. Tahap awal import manual mengenali CSV produksi, bahan baku, bahan penolong, dan kapasitas. File Excel `.xlsx` belum diproses langsung di browser.
 
 Jika batas harga KBLI perlu diperbarui, regenerasi `lib/defaultPriceLimits.ts` dari PDF/Excel sumber lalu deploy ulang aplikasi.

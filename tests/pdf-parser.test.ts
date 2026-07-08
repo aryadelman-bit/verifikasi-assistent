@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PRICE_LIMITS } from "../lib/defaultPriceLimits";
+import { buildIntraNewImportText, csvToSectionText, htmlToPlainText } from "../lib/intranewImport";
 import { parsePriceLimits } from "../lib/priceLimits";
 import { parseReportFromText } from "../lib/reportParser";
 import { validateReport } from "../lib/validator";
@@ -128,6 +129,14 @@ const salesOverProductionWithoutStockText = reportText.replace(
   "8.620.969,00 8.620.969,00 138.662.986.173 Tidak 0,00%"
 );
 
+const intranewProductionCsv = `No.,Produk,KBLI,"Kode HS",Spesifikasi,Merk,Tipe,"Sertifikat Halal","Satuan Asli","Jumlah Produksi Satuan Asli","Jumlah Produksi Satuan Standar (Kilogram)","Nilai Produksi (Rp.)","Jumlah Penjualan Satuan Asli","Jumlah Penjualan Satuan Standar (Kilogram)","Nilai Penjualan","Terdapat Stok Yang Dijual","Persentase Ekspor Penjualan (%)","Negara Tujuan Ekspor"
+1.,Sosis,10130,16010010,"Daging olahan frozen food",,,,CT,"6,00","60,00",2.400.000.000,"5,00","50,00",2.150.000.000,Ya,"0,00%",
+`;
+
+const intranewMaterialCsv = `No,"Nama Bahan Baku",Spesifikasi,"Kode HS","Satuan Asli","Jumlah Dalam Negeri (Satuan Asli)","Jumlah Dalam Negeri (Kilogram)","Nilai Dalam Negeri (Rp.)","Jumlah Luar Negeri (Satuan Asli)","Jumlah Luar Negeri (Kilogram)","Nilai Luar Negeri (Rp.)","Negara Asal Impor","KBLI Produk Yang Dihasilkan","Nama Produk Yang Dihasilkan","Jumlah Persediaan (Kilogram)","Nilai Persediaan (Rp.)"
+1.,"Daging Sapi","Daging Sapi",02011000,kilogram,"5,00","5,00",500.000.000,"0,00","0,00",0,,10130,"Andy Sosis Bakar","500,00","50.000.000,00"
+`;
+
 describe("PDF report parser", () => {
   it("parses the report until liquid waste and ignores sections below it", () => {
     const report = parseReportFromText(reportText, "agro.pdf");
@@ -189,5 +198,29 @@ describe("PDF report parser", () => {
 
     expect(supported.findings.find((finding) => finding.ruleId === "SALES_OVER_PRODUCTION_WITH_STOCK")?.severity).toBe("INFO");
     expect(unsupported.findings.some((finding) => finding.ruleId === "SALES_OVER_PRODUCTION_WITHOUT_STOCK")).toBe(true);
+  });
+
+  it("imports IntraNEW CSV files into parser-compatible report text", () => {
+    const imported = buildIntraNewImportText([
+      { fileName: "Download_CSV_produksi.csv", text: intranewProductionCsv },
+      { fileName: "Download_CSV_bahanbaku.csv", text: intranewMaterialCsv }
+    ]);
+    const report = parseReportFromText(imported.text, "csv-import");
+    const result = validateReport(report, DEFAULT_PRICE_LIMITS);
+
+    expect(imported.warnings).toEqual([]);
+    expect(report.production).toHaveLength(1);
+    expect(report.production[0].product).toBe("Sosis");
+    expect(report.production[0].stockSoldFlag).toBe(true);
+    expect(report.materials).toHaveLength(1);
+    expect(result.findings.some((finding) => finding.ruleId === "PRICE_OUTSIDE_KBLI_LIMIT")).toBe(true);
+    expect(result.findings.some((finding) => finding.ruleId === "INPUT_EXTREME_PRICE")).toBe(true);
+  });
+
+  it("converts saved IntraNEW HTML into readable section text", () => {
+    const text = htmlToPlainText("<html><body><h1>PT Contoh</h1><div>Data Umum</div><table><tr><td>Periode Laporan</td><td>Triwulan 1 Tahun 2026</td></tr></table></body></html>");
+    expect(text).toContain("PT Contoh");
+    expect(text).toContain("Data Umum");
+    expect(csvToSectionText("unknown.csv", "A,B\n1,2").warning).toContain("belum dikenali");
   });
 });

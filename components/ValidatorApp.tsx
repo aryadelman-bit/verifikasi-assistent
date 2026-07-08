@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Clipboard, Download, FileText, Scale, Uplo
 import { useMemo, useState } from "react";
 import { DEFAULT_PRICE_LIMITS } from "@/lib/defaultPriceLimits";
 import { extractPdfText } from "@/lib/pdfText";
+import { importIntraNewFiles } from "@/lib/intranewImport";
 import { parseReportFromText, SECTION_LABELS } from "@/lib/reportParser";
 import { buildValidatorNote, validateReport } from "@/lib/validator";
 import { formatNumber, formatRupiah } from "@/lib/number";
@@ -26,11 +27,17 @@ function cx(...classes: Array<string | false | null | undefined>) {
 function FilePicker({
   label,
   fileName,
-  onFile
+  helper,
+  accept,
+  multiple = false,
+  onFiles
 }: {
   label: string;
   fileName: string;
-  onFile: (file: File) => void;
+  helper?: string;
+  accept: string;
+  multiple?: boolean;
+  onFiles: (files: File[]) => void;
 }) {
   return (
     <label className="uploadBox">
@@ -39,14 +46,16 @@ function FilePicker({
       </span>
       <span>
         <strong>{label}</strong>
-        <small>{fileName || "Pilih PDF"}</small>
+        <small>{fileName || helper || "Pilih file"}</small>
       </span>
       <input
         type="file"
-        accept="application/pdf,.pdf"
+        accept={accept}
+        multiple={multiple}
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onFile(file);
+          const files = Array.from(event.target.files ?? []);
+          if (files.length) onFiles(files);
+          event.currentTarget.value = "";
         }}
       />
     </label>
@@ -193,6 +202,8 @@ function DataPreview({ report }: { report: ParsedReport }) {
 export function ValidatorApp() {
   const [reportFileName, setReportFileName] = useState("");
   const [reportText, setReportText] = useState("");
+  const [sourceMode, setSourceMode] = useState<"PDF" | "HTML/CSV" | "">("");
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [activeKey, setActiveKey] = useState<ReportSectionKey>("identity");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -208,8 +219,27 @@ export function ValidatorApp() {
       const text = await extractPdfText(file);
       setReportFileName(file.name);
       setReportText(text);
+      setSourceMode("PDF");
+      setImportWarnings([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "PDF tidak dapat dibaca.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function loadIntraNewFiles(files: File[]) {
+    setError("");
+    setBusy(`Mengimpor ${files.length} file IntraNEW`);
+    try {
+      const result = await importIntraNewFiles(files);
+      if (!result.text.trim()) throw new Error("File HTML/CSV belum berhasil dibaca sebagai data laporan.");
+      setReportFileName(result.fileNames.join(", "));
+      setReportText(result.text);
+      setSourceMode("HTML/CSV");
+      setImportWarnings(result.warnings);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "File HTML/CSV IntraNEW tidak dapat dibaca.");
     } finally {
       setBusy("");
     }
@@ -295,10 +325,25 @@ export function ValidatorApp() {
             <span>IntraNEW/SIINas</span>
           </div>
         </div>
-        <FilePicker label="Laporan Triwulanan PDF" fileName={reportFileName} onFile={loadPdf} />
+        <FilePicker
+          label="Laporan Triwulanan PDF"
+          fileName={sourceMode === "PDF" ? reportFileName : ""}
+          helper="Pilih PDF"
+          accept="application/pdf,.pdf"
+          onFiles={(files) => loadPdf(files[0])}
+        />
+        <FilePicker
+          label="Import HTML/CSV IntraNEW"
+          fileName={sourceMode === "HTML/CSV" ? reportFileName : ""}
+          helper="Pilih HTML/CSV"
+          accept=".html,.htm,.csv,text/html,text/csv"
+          multiple
+          onFiles={loadIntraNewFiles}
+        />
         <div className="statusBox">
           <small>Status</small>
-          <strong>{busy || (report ? "Siap divalidasi" : "Menunggu PDF")}</strong>
+          <strong>{busy || (report ? "Siap divalidasi" : "Menunggu file")}</strong>
+          <span>{sourceMode ? `Sumber: ${sourceMode}` : "Sumber belum dipilih"}</span>
           <span>{Object.keys(DEFAULT_PRICE_LIMITS).length} batas harga KBLI bawaan aktif</span>
         </div>
         {error ? <div className="errorBox">{error}</div> : null}
@@ -322,8 +367,8 @@ export function ValidatorApp() {
         {!report || !result ? (
           <div className="emptyState">
             <FileText size={44} />
-            <h2>Unggah laporan triwulanan PDF</h2>
-            <p>Aplikasi memakai batas harga KBLI bawaan, membaca PDF di browser, menilai kewajaran sampai bagian Pengelolaan Limbah Cair, lalu membuat catatan per bagian dan rekomendasi keseluruhan.</p>
+            <h2>Unggah laporan PDF atau import HTML/CSV</h2>
+            <p>Aplikasi memakai batas harga KBLI bawaan, membaca file di browser, menilai kewajaran sampai bagian Pengelolaan Limbah Cair, lalu membuat catatan per bagian dan rekomendasi keseluruhan.</p>
           </div>
         ) : (
           <>
@@ -345,6 +390,12 @@ export function ValidatorApp() {
               <div className="warningStrip">
                 <AlertTriangle size={18} />
                 <span>{report.parserWarnings.join(" ")}</span>
+              </div>
+            ) : null}
+            {importWarnings.length ? (
+              <div className="warningStrip">
+                <AlertTriangle size={18} />
+                <span>{importWarnings.join(" ")}</span>
               </div>
             ) : null}
 
