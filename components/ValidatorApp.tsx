@@ -202,7 +202,7 @@ function DataPreview({ report }: { report: ParsedReport }) {
 export function ValidatorApp() {
   const [reportFileName, setReportFileName] = useState("");
   const [reportText, setReportText] = useState("");
-  const [sourceMode, setSourceMode] = useState<"PDF" | "HTML/CSV" | "">("");
+  const [sourceMode, setSourceMode] = useState<"PDF" | "HTML/CSV/XLSX" | "">("");
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [activeKey, setActiveKey] = useState<ReportSectionKey>("identity");
   const [busy, setBusy] = useState("");
@@ -233,13 +233,13 @@ export function ValidatorApp() {
     setBusy(`Mengimpor ${files.length} file IntraNEW`);
     try {
       const result = await importIntraNewFiles(files);
-      if (!result.text.trim()) throw new Error("File HTML/CSV belum berhasil dibaca sebagai data laporan.");
+      if (!result.text.trim()) throw new Error("File HTML/CSV/XLSX belum berhasil dibaca sebagai data laporan.");
       setReportFileName(result.fileNames.join(", "));
       setReportText(result.text);
-      setSourceMode("HTML/CSV");
+      setSourceMode("HTML/CSV/XLSX");
       setImportWarnings(result.warnings);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "File HTML/CSV IntraNEW tidak dapat dibaca.");
+      setError(err instanceof Error ? err.message : "File HTML/CSV/XLSX IntraNEW tidak dapat dibaca.");
     } finally {
       setBusy("");
     }
@@ -333,10 +333,10 @@ export function ValidatorApp() {
           onFiles={(files) => loadPdf(files[0])}
         />
         <FilePicker
-          label="Import HTML/CSV IntraNEW"
-          fileName={sourceMode === "HTML/CSV" ? reportFileName : ""}
-          helper="Pilih HTML/CSV"
-          accept=".html,.htm,.csv,text/html,text/csv"
+          label="Import HTML/CSV/XLSX IntraNEW"
+          fileName={sourceMode === "HTML/CSV/XLSX" ? reportFileName : ""}
+          helper="Pilih HTML/CSV/XLSX"
+          accept=".html,.htm,.csv,.xlsx,.xls,text/html,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
           multiple
           onFiles={loadIntraNewFiles}
         />
@@ -367,7 +367,7 @@ export function ValidatorApp() {
         {!report || !result ? (
           <div className="emptyState">
             <FileText size={44} />
-            <h2>Unggah laporan PDF atau import HTML/CSV</h2>
+            <h2>Unggah laporan PDF atau import HTML/CSV/XLSX</h2>
             <p>Aplikasi memakai batas harga KBLI bawaan, membaca file di browser, menilai kewajaran sampai bagian Pengelolaan Limbah Cair, lalu membuat catatan per bagian dan rekomendasi keseluruhan.</p>
           </div>
         ) : (

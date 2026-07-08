@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import * as XLSX from "xlsx";
 import { DEFAULT_PRICE_LIMITS } from "../lib/defaultPriceLimits";
-import { buildIntraNewImportText, csvToSectionText, htmlToPlainText } from "../lib/intranewImport";
+import { buildIntraNewImportText, csvToSectionText, htmlToPlainText, workbookToCsvSources } from "../lib/intranewImport";
 import { parsePriceLimits } from "../lib/priceLimits";
 import { parseReportFromText } from "../lib/reportParser";
 import { validateReport } from "../lib/validator";
@@ -215,6 +216,34 @@ describe("PDF report parser", () => {
     expect(report.materials).toHaveLength(1);
     expect(result.findings.some((finding) => finding.ruleId === "PRICE_OUTSIDE_KBLI_LIMIT")).toBe(true);
     expect(result.findings.some((finding) => finding.ruleId === "INPUT_EXTREME_PRICE")).toBe(true);
+  });
+
+  it("imports IntraNEW XLSX capacity sheets into parser-compatible report text", () => {
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.aoa_to_sheet([
+      [
+        "No.",
+        "Produk",
+        "KBLI",
+        "Kode HS",
+        "Kapasitas Produksi Dalam Satuan Asli per Jan - Mar 2026",
+        "Kapasitas Terpasang Dalam  Satuan Asli per Jan - Mar 2026",
+        "Kapasitas Produksi Dalam Satuan Standar per Jan - Mar 2026",
+        "Kapasitas Terpasang Dalam Satuan Standar per Jan - Mar 2026"
+      ],
+      ["1", "Sosis", "10130", "16010010", "100 ton", "166,7 ton", "100.000 Kilogram", "166.670 Kilogram"],
+      ["2", "Bakpao Mini", "10710", "19012010", "8 ton", "25 ton", "8.000 Kilogram", "25.000 Kilogram"]
+    ]);
+    XLSX.utils.book_append_sheet(workbook, sheet, "Laporan");
+
+    const imported = buildIntraNewImportText(workbookToCsvSources("Download_CSV_laporan.xlsx", workbook));
+    const report = parseReportFromText(imported.text, "xlsx-import");
+
+    expect(imported.warnings).toEqual([]);
+    expect(report.capacity).toHaveLength(2);
+    expect(report.capacity[0].product).toBe("Sosis");
+    expect(report.capacity[0].installedKg).toBe(166670);
+    expect(report.parserWarnings).not.toContain("Bagian Kapasitas Produksi tidak ditemukan pada teks PDF.");
   });
 
   it("converts saved IntraNEW HTML into readable section text", () => {

@@ -1,3 +1,5 @@
+import * as XLSX from "xlsx";
+import type { WorkBook } from "xlsx";
 import { parseReportFromText, SECTION_LABELS } from "./reportParser";
 import type { ReportSectionKey } from "./types";
 
@@ -57,11 +59,18 @@ function parseCsvRows(text: string): string[][] {
 }
 
 function rowGetter(headers: string[], row: string[]) {
-  const indexByHeader = new Map(headers.map((header, index) => [normalizeHeader(header), index]));
+  const normalizedHeaders = headers.map(normalizeHeader);
+  const indexByHeader = new Map(normalizedHeaders.map((header, index) => [header, index]));
   return (candidates: string[], fallback = "") => {
     for (const candidate of candidates) {
-      const index = indexByHeader.get(normalizeHeader(candidate));
+      const normalizedCandidate = normalizeHeader(candidate);
+      const index = indexByHeader.get(normalizedCandidate);
       if (index !== undefined) return row[index] ?? fallback;
+    }
+    for (const candidate of candidates) {
+      const normalizedCandidate = normalizeHeader(candidate);
+      const index = normalizedHeaders.findIndex((header) => header.includes(normalizedCandidate));
+      if (index >= 0) return row[index] ?? fallback;
     }
     return fallback;
   };
@@ -70,6 +79,15 @@ function rowGetter(headers: string[], row: string[]) {
 function numbered(value: string, index: number): string {
   const clean = value.trim();
   return clean || `${index + 1}.`;
+}
+
+function withDefaultUnit(value: string, unit: string): string {
+  const clean = value.trim();
+  if (!clean) return `0 ${unit}`;
+  if (/\b(kg|kilogram|gram|ton|tonne|mmbtu|kwh|liter|litre|m3|m³|unit|pcs|piece|ct|buah|lusin|meter|set)\b/i.test(clean)) {
+    return clean;
+  }
+  return `${clean} ${unit}`;
 }
 
 function productionCsvToText(headers: string[], rows: string[][]): string {
@@ -124,38 +142,68 @@ function capacityCsvToText(headers: string[], rows: string[][]): string {
     const product = get(["Produk", "Nama Produk"], "Produk");
     const kbli = get(["KBLI"], "");
     const hs = get(["Kode HS", "HS"], "");
-    const productionOriginal = get(["Kapasitas Produksi Satuan Asli", "Kapasitas Produksi"], "0 ton");
-    const installedOriginal = get(["Kapasitas Terpasang Satuan Asli", "Kapasitas Terpasang"], productionOriginal);
-    const productionKg = get(["Kapasitas Produksi Satuan Standar (Kilogram)", "Kapasitas Produksi Kilogram"], "0 Kilogram");
-    const installedKg = get(["Kapasitas Terpasang Satuan Standar (Kilogram)", "Kapasitas Terpasang Kilogram"], productionKg);
+    const productionOriginal = withDefaultUnit(
+      get(["Kapasitas Produksi Satuan Asli", "Kapasitas Produksi Dalam Satuan Asli", "Kapasitas Produksi"], "0"),
+      "ton"
+    );
+    const installedOriginal = withDefaultUnit(
+      get(["Kapasitas Terpasang Satuan Asli", "Kapasitas Terpasang Dalam Satuan Asli", "Kapasitas Terpasang"], productionOriginal),
+      "ton"
+    );
+    const productionKg = withDefaultUnit(
+      get(["Kapasitas Produksi Satuan Standar (Kilogram)", "Kapasitas Produksi Dalam Satuan Standar", "Kapasitas Produksi Kilogram"], "0"),
+      "Kilogram"
+    );
+    const installedKg = withDefaultUnit(
+      get(["Kapasitas Terpasang Satuan Standar (Kilogram)", "Kapasitas Terpasang Dalam Satuan Standar", "Kapasitas Terpasang Kilogram"], productionKg),
+      "Kilogram"
+    );
     lines.push(`${no} ${product} ${kbli} ${hs} ${productionOriginal} ${installedOriginal} ${productionKg} ${installedKg}`);
   });
   return lines.join("\n");
 }
 
+function detectCsvSectionFromHeaders(headers: string[], sourceHint = ""): ReportSectionKey | null {
+  const normalizedHeaders = headers.map(normalizeHeader).join(" | ");
+  if (normalizedHeaders.includes("kapasitas") && (normalizedHeaders.includes("kode hs") || normalizedHeaders.includes("produk"))) return "capacity";
+  if (normalizedHeaders.includes("jumlah produksi") && normalizedHeaders.includes("nilai produksi")) return "production";
+  if (normalizedHeaders.includes("nama bahan penolong") && normalizedHeaders.includes("nilai dalam negeri")) return "helpers";
+  if (normalizedHeaders.includes("nama bahan baku") && normalizedHeaders.includes("nilai dalam negeri")) return sourceHint.includes("penolong") ? "helpers" : "materials";
+  return null;
+}
+
 function detectCsvSection(fileName: string, headers: string[]): ReportSectionKey | null {
   const normalizedName = normalizeHeader(fileName);
-  const normalizedHeaders = headers.map(normalizeHeader).join(" | ");
+  const headerMatch = detectCsvSectionFromHeaders(headers, normalizedName);
+  if (headerMatch) return headerMatch;
   if (normalizedName.includes("bahanpenolong")) return "helpers";
   if (normalizedName.includes("bahanbaku")) return "materials";
-  if (normalizedName.includes("produksi")) return "production";
   if (normalizedName.includes("kapasitas")) return "capacity";
-  if (normalizedHeaders.includes("jumlah produksi") && normalizedHeaders.includes("nilai produksi")) return "production";
-  if (normalizedHeaders.includes("nama bahan baku") && normalizedHeaders.includes("nilai dalam negeri")) return normalizedName.includes("penolong") ? "helpers" : "materials";
-  if (normalizedHeaders.includes("kapasitas") && normalizedHeaders.includes("kode hs")) return "capacity";
+  if (normalizedName.includes("produksi")) return "production";
   return null;
 }
 
 export function csvToSectionText(fileName: string, csvText: string): { key: ReportSectionKey | null; text: string; warning?: string } {
   const rows = parseCsvRows(csvText);
   if (rows.length < 2) return { key: null, text: "", warning: `${fileName}: CSV kosong atau tidak memiliki baris data.` };
-  const [headers, ...dataRows] = rows;
+  const headerIndex = rows.findIndex((row) => detectCsvSectionFromHeaders(row, normalizeHeader(fileName)));
+  const [headers, ...dataRows] = headerIndex >= 0 ? rows.slice(headerIndex) : rows;
   const key = detectCsvSection(fileName, headers);
   if (key === "production") return { key, text: productionCsvToText(headers, dataRows) };
   if (key === "materials") return { key, text: materialCsvToText(headers, dataRows, "Bahan Baku") };
   if (key === "helpers") return { key, text: materialCsvToText(headers, dataRows, "Bahan Penolong") };
   if (key === "capacity") return { key, text: capacityCsvToText(headers, dataRows) };
   return { key: null, text: "", warning: `${fileName}: jenis CSV belum dikenali, file dilewati.` };
+}
+
+export function workbookToCsvSources(fileName: string, workbook: WorkBook): IntraNewSource[] {
+  return workbook.SheetNames.map((sheetName) => {
+    const worksheet = workbook.Sheets[sheetName];
+    return {
+      fileName: `${fileName}#${sheetName}.csv`,
+      text: XLSX.utils.sheet_to_csv(worksheet, { FS: ",", blankrows: false })
+    };
+  }).filter((source) => source.text.trim());
 }
 
 export function htmlToPlainText(html: string): string {
@@ -187,7 +235,7 @@ export function buildIntraNewImportText(sources: IntraNewSource[]): IntraNewImpo
 
   for (const source of sources) {
     if (!/\.csv$/i.test(source.fileName)) {
-      if (!/\.(html?|xhtml)$/i.test(source.fileName)) warnings.push(`${source.fileName}: hanya HTML dan CSV yang didukung pada tahap import manual.`);
+      if (!/\.(html?|xhtml)$/i.test(source.fileName)) warnings.push(`${source.fileName}: hanya HTML, CSV, dan Excel yang didukung pada tahap import manual.`);
       continue;
     }
     const parsed = csvToSectionText(source.fileName, source.text);
@@ -199,7 +247,7 @@ export function buildIntraNewImportText(sources: IntraNewSource[]): IntraNewImpo
     return {
       fileNames,
       text: htmlText,
-      warnings: htmlText ? warnings : [...warnings, "Tidak ada HTML/CSV yang berhasil diproses."]
+      warnings: htmlText ? warnings : [...warnings, "Tidak ada HTML/CSV/Excel yang berhasil diproses."]
     };
   }
 
@@ -216,11 +264,16 @@ export function buildIntraNewImportText(sources: IntraNewSource[]): IntraNewImpo
 }
 
 export async function importIntraNewFiles(files: File[]): Promise<IntraNewImportResult> {
-  const sources = await Promise.all(
-    files.map(async (file) => ({
-      fileName: file.name,
-      text: await file.text()
-    }))
-  );
+  const sources = (
+    await Promise.all(
+      files.map(async (file) => {
+        if (/\.(xlsx|xls)$/i.test(file.name)) {
+          const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: false });
+          return workbookToCsvSources(file.name, workbook);
+        }
+        return [{ fileName: file.name, text: await file.text() }];
+      })
+    )
+  ).flat();
   return buildIntraNewImportText(sources);
 }
