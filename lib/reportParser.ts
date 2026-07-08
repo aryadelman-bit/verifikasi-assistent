@@ -103,8 +103,13 @@ function getLines(text: string): string[] {
 }
 
 function cutAfterLiquidWaste(lines: string[]): string[] {
-  const indiIndex = lines.findIndex((line) => /^Indi 4\.0$/i.test(line) || /^Buka\s+Indi 4\.0$/i.test(line));
-  return indiIndex >= 0 ? lines.slice(0, indiIndex) : lines;
+  const liquidWasteIndex = lines.findIndex((line) => /^Pengelolaan Limbah Cair$/i.test(line));
+  const searchFrom = liquidWasteIndex >= 0 ? liquidWasteIndex + 1 : 0;
+  const indiIndex = lines.slice(searchFrom).findIndex((line) => /^Indi 4\.0$/i.test(line) || /^Buka\s+Indi 4\.0$/i.test(line));
+  if (indiIndex >= 0) return lines.slice(0, searchFrom + indiIndex);
+  if (liquidWasteIndex >= 0) return lines;
+  const fallbackIndiIndex = lines.findIndex((line) => /^Indi 4\.0$/i.test(line) || /^Buka\s+Indi 4\.0$/i.test(line));
+  return fallbackIndiIndex >= 0 ? lines.slice(0, fallbackIndiIndex) : lines;
 }
 
 function sectionize(lines: string[]): Record<ReportSectionKey, string> {
@@ -166,8 +171,10 @@ function parseGeneral(text: string): Record<string, string> {
   const statusIndex = getLines(text).findIndex((line) => /^Status Berproduksi$/i.test(line));
   if (statusIndex >= 0) {
     const lines = getLines(text).slice(statusIndex, statusIndex + 5);
-    general["Status Berproduksi"] = lines.includes("Buka") ? "Buka" : lines[1] ?? "";
+    general["Status Berproduksi"] = lines[0].replace(/^Status\s+/i, "").trim() || (lines.includes("Buka") ? "Buka" : lines[1] ?? "");
   }
+  const statusValue = valueAfter("Status", text);
+  if (statusValue && !/^Berproduksi\s+Menggunakan Maklon/i.test(statusValue)) general["Status Berproduksi"] = statusValue;
   return general;
 }
 
@@ -183,6 +190,16 @@ function parseInventory(text: string): InventoryRow[] {
       };
     })
     .filter((row): row is InventoryRow => Boolean(row));
+}
+
+function uniqueInventoryRows(rows: InventoryRow[]): InventoryRow[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = `${row.type}|${row.startValue}|${row.endValue}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function parseCapacityRows(text: string): CapacityRow[] {
@@ -284,7 +301,11 @@ function parseLabor(text: string): LaborSummary {
 
 function parseSimpleNumberRows(text: string): TableRow[] {
   return getLines(text)
-    .map((line) => line.match(/^(\d+\.?)\s+(.+?)\s+([\d.,]+(?:\s+\S+)?)\s+([\d.]+)?$/))
+    .map((line) =>
+      line.match(
+        /^(\d+\.?)\s+(.+?)\s+([\d.,]+(?:\s+(?:kg|kilogram|ton|m3|m³|kwh|mmbtu|orang|hari|unit|liter|ltr|mtq))?)(?:\s+([\d.]+))?$/i
+      )
+    )
     .filter((match): match is RegExpMatchArray => Boolean(match))
     .map((match) => ({
       No: match[1],
@@ -369,7 +390,7 @@ export function parseReportFromText(text: string, fileName = "laporan.pdf"): Par
     identity,
     general,
     sectionsText,
-    inventory: parseInventory(`${sectionsText.inventory}\n${sectionsText.machines}`),
+    inventory: uniqueInventoryRows(parseInventory(`${sectionsText.inventory}\n${sectionsText.machines}`)),
     capacity,
     production,
     materials,
