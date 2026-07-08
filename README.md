@@ -1,10 +1,98 @@
-# Checksheet Verifikasi Standar Kegiatan Usaha IMHLP
+# IntraNEW PDF Validator
 
-Aplikasi berbasis web untuk memudahkan verifikator Direktorat IMHLP dalam mengecek dokumen kesesuaian OSS, mengumpulkan catatan (OK/NOK), dan meng-_generate_ naskah perbaikan (autotext) secara terotomasi.
+Aplikasi validasi lokal berbasis **Next.js + React + TypeScript** untuk membaca PDF laporan produksi SIINas/IntraNEW yang diunggah validator, lalu memberi penilaian kewajaran per bagian sampai **Pengelolaan Limbah Cair**. Bagian setelah itu, termasuk INDI 4.0 dan catatan lain di bawahnya, sengaja diabaikan sesuai kebutuhan validasi saat ini.
 
-## Cara Menjalankan Lokal
+PDF diproses di browser menggunakan `pdfjs-dist`. Aplikasi tidak meminta username/password, tidak membuka sesi IntraNEW, dan tidak mengirim data laporan ke API eksternal.
 
-1. Clone repository ini:
-   ```bash
-   git clone <url-repo-anda>
-   cd imhlp-checksheet
+## Fitur
+
+- Upload PDF laporan produksi triwulanan.
+- Import manual HTML halaman detail, CSV, atau Excel `.xlsx/.xls` hasil download IntraNEW.
+- Batas kewajaran harga per KBLI sudah menjadi data bawaan aplikasi.
+- Ekstraksi teks PDF di sisi browser.
+- Parsing bagian laporan: identitas, data umum, persediaan, kapasitas, produksi dan penjualan, bahan baku, bahan penolong, investasi, tenaga kerja, prakerin, air, energi, pengeluaran, rencana produksi, mesin, limbah padat, limbah B3, dan limbah cair.
+- Validasi rule-based per bagian dengan severity `LOW`, `MEDIUM`, `HIGH`, dan `CRITICAL`.
+- Perbandingan harga rata-rata per kg terhadap batas kewajaran KBLI dari PDF referensi.
+- Risk score 0-100, rekomendasi keseluruhan, ringkasan temuan per bagian, dan catatan validator siap ditempel.
+- Export hasil validasi ke file HTML.
+
+## Install
+
+```powershell
+cd "C:\Users\Admin\Documents\Project Validasi\intranew-validator"
+pnpm install
+```
+
+Jika `pnpm` belum ada di PATH, gunakan Node.js/pnpm yang tersedia di runtime Codex atau install Node.js LTS lalu aktifkan Corepack:
+
+```powershell
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+## Menjalankan Lokal
+
+```powershell
+pnpm dev
+```
+
+Buka `http://127.0.0.1:3000`.
+
+Cara pakai:
+
+1. Upload PDF laporan produksi.
+2. Atau upload file HTML/CSV/XLSX IntraNEW melalui `Import HTML/CSV/XLSX IntraNEW`.
+3. Hasil analisis otomatis muncul setelah file terbaca.
+4. Baca ringkasan, temuan per bagian, dan catatan validator.
+5. Klik ikon export pada panel `Catatan Validator` bila perlu menyimpan HTML report.
+
+Untuk tahap import manual, file yang paling stabil adalah CSV `produksi`, `bahanbaku`, `bahanpenolong`, dan bila tersedia `kapasitas`. Jika hasil download kapasitas berupa Excel `.xlsx/.xls`, aplikasi akan membaca tiap sheet Excel dan mengubahnya menjadi CSV internal sebelum diproses. HTML halaman detail juga dapat diunggah sebagai sumber teks tambahan. File diproses di browser dan tidak dikirim ke layanan eksternal.
+
+## Testing
+
+```powershell
+pnpm test
+pnpm typecheck
+pnpm build
+```
+
+Test memakai fixture teks kecil, bukan file PDF perusahaan mentah, agar validasi parser dan rules tetap bisa dijalankan tanpa data sensitif.
+
+## Deploy ke Vercel
+
+Project ini siap sebagai aplikasi Next.js standar.
+
+```powershell
+pnpm build
+```
+
+Di Vercel:
+
+- Framework preset: `Next.js`
+- Build command: `pnpm build`
+- Install command: `pnpm install`
+- Output directory: biarkan default
+
+Catatan privasi: parsing PDF saat ini berjalan di browser pengguna. Jangan menambahkan upload ke API eksternal kecuali ada persetujuan dan kebijakan keamanan data yang jelas.
+
+## Struktur Penting
+
+- `app/` - halaman Next.js.
+- `components/ValidatorApp.tsx` - UI upload, validasi, ringkasan, tabel temuan, dan export.
+- `lib/pdfText.ts` - ekstraksi teks PDF menggunakan PDF.js.
+- `lib/intranewImport.ts` - import manual HTML/CSV/XLSX IntraNEW ke bentuk teks yang kompatibel dengan parser.
+- `lib/reportParser.ts` - parser bagian laporan sampai Pengelolaan Limbah Cair.
+- `lib/defaultPriceLimits.ts` - batas kewajaran harga per KBLI bawaan aplikasi.
+- `lib/priceLimits.ts` - parser utilitas bila referensi harga perlu diregenerasi dari teks PDF.
+- `lib/validator.ts` - rules engine dan risk score.
+- `tests/` - unit test parser dan validasi.
+
+## Troubleshooting
+
+Jika PDF tidak terbaca, cek apakah file hasil scan gambar. Versi awal ini membaca teks PDF digital, bukan OCR.
+
+Jika bagian tertentu kosong, struktur PDF kemungkinan berbeda. Aplikasi tetap menampilkan warning parser agar pola section di `lib/reportParser.ts` bisa disesuaikan.
+
+Jika import CSV/Excel tidak terbaca, cek nama/header file. Import manual mengenali tabel produksi, bahan baku, bahan penolong, dan kapasitas dari nama file atau header. Untuk Excel, pastikan sheet berisi header seperti `Produk`, `KBLI`, `Kode HS`, dan kolom kapasitas/produksi terkait.
+
+Jika batas harga KBLI perlu diperbarui, regenerasi `lib/defaultPriceLimits.ts` dari PDF/Excel sumber lalu deploy ulang aplikasi.

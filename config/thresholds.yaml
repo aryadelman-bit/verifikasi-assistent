@@ -1,0 +1,21 @@
+max_utilization_percent: 100
+critical_utilization_percent: 120
+low_utilization_percent: 5
+max_food_material_price_per_kg: 5000000
+zero_price_high_min_quantity: 0
+material_ratio_low_food: 0.2
+material_ratio_high_food: 5
+qoq_warning_percent: 30
+qoq_high_percent: 50
+qoq_critical_percent: 80
+electricity_cost_min_per_kwh: 500
+electricity_cost_max_per_kwh: 5000
+gas_cost_min_per_mmbtu: 20000
+gas_cost_max_per_mmbtu: 500000
+min_reasonable_quarterly_wage_per_worker: 3000000
+max_reasonable_liquid_waste_m3_per_second: 10
+inventory_balance_tolerance_percent: 15
+price_per_kg_warning_high: 1000000
+product_plan_change_warning_percent: 50
+old_machine_age_years: 25
+
